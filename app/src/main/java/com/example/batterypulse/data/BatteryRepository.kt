@@ -91,7 +91,17 @@ class BatteryRepository(private val context: Context, private val database: Batt
 
     private fun BatterySampleEntity.toDomain() = BatterySample(
         timestampMillis = timestampMillis,
-        status = BatteryStatus(percent, chargingState, temperatureCelsius, voltageMillivolts, currentAmps, powerWatts)
+        status = BatteryStatus(
+            percent,
+            chargingState,
+            temperatureCelsius,
+            voltageMillivolts,
+            currentAmps,
+            powerWatts,
+            inputPowerWatts,
+            runCatching { com.example.batterypulse.domain.PowerSource.valueOf(powerSource) }
+                .getOrDefault(com.example.batterypulse.domain.PowerSource.BATTERY_SIDE)
+        )
     )
 
     private fun BatterySample.toEntity() = BatterySampleEntity(
@@ -101,7 +111,9 @@ class BatteryRepository(private val context: Context, private val database: Batt
         temperatureCelsius = status.temperatureCelsius,
         voltageMillivolts = status.voltageMillivolts,
         currentAmps = status.currentAmps,
-        powerWatts = status.powerWatts
+        powerWatts = status.powerWatts,
+        inputPowerWatts = status.inputPowerWatts,
+        powerSource = status.powerSource.name
     )
 
     private fun readStatus(): BatteryStatus {
@@ -125,7 +137,18 @@ class BatteryRepository(private val context: Context, private val database: Batt
         } else 0
         val currentAmps = currentMicroAmps / 1_000_000f
         val powerWatts = voltage / 1000f * kotlin.math.abs(currentAmps)
-        return BatteryStatus(percent, status, temperature, voltage, currentAmps, powerWatts)
+        val inputPowerWatts = InputPowerReader.readWatts()
+        return BatteryStatus(
+            percent,
+            status,
+            temperature,
+            voltage,
+            currentAmps,
+            powerWatts,
+            inputPowerWatts,
+            if (inputPowerWatts != null) com.example.batterypulse.domain.PowerSource.SYSFS_INPUT
+            else com.example.batterypulse.domain.PowerSource.BATTERY_SIDE
+        )
     }
 
     companion object {

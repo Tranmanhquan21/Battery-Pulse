@@ -37,7 +37,7 @@ class BatteryMonitorService : Service() {
                 repository.checkAlerts(status)
                 val interval = when {
                     status.chargingState != "Đang sạc" -> 30_000L
-                    status.powerWatts >= 30f -> 10_000L
+                    status.inputPowerWatts != null && status.inputPowerWatts >= 30f -> 10_000L
                     else -> 15_000L
                 }
                 delay(interval)

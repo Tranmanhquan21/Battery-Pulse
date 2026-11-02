@@ -320,7 +320,8 @@ private fun AnalysisScreen(viewModel: DashboardViewModel, preferences: AppPrefer
         item { AnalysisChartCard(if (english) "Temperature" else "Nhiệt độ", "°C", palette, samples.map { it.status.temperatureCelsius }, english) }
         item { AnalysisChartCard(if (english) "Voltage" else "Điện áp", "mV", palette, samples.map { it.status.voltageMillivolts.toFloat() }, english) }
         item { AnalysisChartCard(if (english) "Current" else "Dòng điện", "mA", palette, samples.map { it.status.currentAmps * 1000f }, english) }
-        item { AnalysisChartCard(if (english) "Power" else "Công suất", "W", palette, samples.map { it.status.powerWatts }, english) }
+        item { AnalysisChartCard(if (english) "Battery-side power" else "Công suất phía pin", "W", palette, samples.map { it.status.powerWatts }, english) }
+        item { AnalysisChartCard(if (english) "USB-C input power" else "Công suất đầu vào USB-C", "W", palette, samples.mapNotNull { it.status.inputPowerWatts }, english) }
     }
 }
 
@@ -408,8 +409,17 @@ private fun BatteryHeroCard(status: BatteryStatus, palette: Palette, language: A
                 Text("%", color = palette.accent, fontSize = 24.sp, modifier = Modifier.padding(bottom = 8.dp))
                 Spacer(Modifier.weight(1f))
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(if (language == AppLanguage.ENGLISH) "Charging power" else "Công suất sạc", color = palette.secondaryText, fontSize = 11.sp)
-                    Text("%.1f W".format(status.powerWatts), color = palette.accent, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(if (language == AppLanguage.ENGLISH) "USB-C input power" else "Công suất đầu vào USB-C", color = palette.secondaryText, fontSize = 11.sp)
+                    Text(status.inputPowerWatts?.let { "%.1f W".format(it) } ?: "—", color = palette.accent, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (language == AppLanguage.ENGLISH) {
+                            if (status.inputPowerWatts != null) "System input data" else "Input data unavailable"
+                        } else {
+                            if (status.inputPowerWatts != null) "Dữ liệu đầu vào hệ thống" else "Không có dữ liệu đầu vào"
+                        },
+                        color = palette.secondaryText,
+                        fontSize = 9.sp
+                    )
                 }
             }
             Spacer(Modifier.height(14.dp))
@@ -463,7 +473,12 @@ private fun LiveMetrics(status: BatteryStatus, palette: Palette, language: AppLa
         Spacer(Modifier.height(9.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
             MetricCard(Modifier.weight(1f), if (language == AppLanguage.ENGLISH) "Current" else "Dòng điện", "%.0f mA".format(status.currentAmps * 1000), Icons.Default.Speed, palette)
-            MetricCard(Modifier.weight(1f), if (language == AppLanguage.ENGLISH) "Power" else "Công suất", "%.1f W".format(status.powerWatts), Icons.Default.Power, palette)
+            MetricCard(Modifier.weight(1f), if (language == AppLanguage.ENGLISH) "Battery power" else "Công suất pin", "%.1f W".format(status.powerWatts), Icons.Default.Power, palette)
+        }
+        Spacer(Modifier.height(9.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
+            MetricCard(Modifier.weight(1f), if (language == AppLanguage.ENGLISH) "USB-C input" else "Đầu vào USB-C", status.inputPowerWatts?.let { "%.1f W".format(it) } ?: "—", Icons.Default.Power, palette)
+            MetricCard(Modifier.weight(1f), if (language == AppLanguage.ENGLISH) "Power source" else "Nguồn công suất", if (status.inputPowerWatts != null) "System" else "Battery", Icons.Default.Bolt, palette)
         }
     }
 }

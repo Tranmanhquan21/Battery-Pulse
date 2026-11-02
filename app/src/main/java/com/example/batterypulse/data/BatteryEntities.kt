@@ -11,7 +11,9 @@ data class BatterySampleEntity(
     val temperatureCelsius: Float,
     val voltageMillivolts: Int,
     val currentAmps: Float,
-    val powerWatts: Float
+    val powerWatts: Float,
+    val inputPowerWatts: Float?,
+    val powerSource: String
 )
 
 @Entity(tableName = "charging_sessions")
